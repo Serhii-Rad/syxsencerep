@@ -15,7 +15,7 @@ namespace syxsence
     {
         public IWebDriver driver;
         public readonly string URL = "https://testteamdev.cloudmanagementsuite.com/";
-        public TestContext TestContext;
+        public TestContext TestContext { get; set; }
         public Dictionary<string, int> taskType = new Dictionary<string, int>() 
         { 
             { "Discovery", 1 },
@@ -40,21 +40,26 @@ namespace syxsence
         [TestCleanup]
         public void CleanUp()
         {
-            //var takeScreenshot = driver.TakeScreenshot();
+            var takeScreenshot = driver.TakeScreenshot();
 
-            //if (TestContext.CurrentTestOutcome != UnitTestOutcome.Passed)
-            //{
-            //    var filePathToScreenshot = Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + "\\Screenshot " + DateTime.Now.ToString().Replace(".", "_").Replace(":", "_") + ".png";
-            //    takeScreenshot.SaveAsFile(filePathToScreenshot);
+            if (TestContext.CurrentTestOutcome != UnitTestOutcome.Passed)
+            {
+                var filePathToScreenshot = Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + "\\Screenshot " + DateTime.Now.ToString().Replace(".", "_").Replace(":", "_") + ".png";
+                takeScreenshot.SaveAsFile(filePathToScreenshot);
 
-            //    if (File.Exists(filePathToScreenshot))
-            //    {
-            //        TestContext.AddResultFile(filePathToScreenshot);
-            //    }
-            //}
+                if (File.Exists(filePathToScreenshot))
+                {
+                    TestContext.AddResultFile(filePathToScreenshot);
+                }
+            }
             driver.Close();
         }
-        
+        public void WaitVisibilityOfElement(long timeToWait, By locator)
+        {
+            WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(timeToWait));
+            wait.Until(ExpectedConditions.VisibilityOfAllElementsLocatedBy(locator));
+        }
+
         public void SignInSite()
         {
             IWebElement loginField = driver.FindElement(By.XPath("//input[@placeholder='Email Address']"));
@@ -139,6 +144,32 @@ namespace syxsence
 
             Assert.AreEqual("Reboot progress", driver.FindElement(By.XPath("//div[@id='id_4396']")).Text);
             
+        }
+        [TestMethod]
+        public void TestCase12069()
+        {
+            SignInSite();
+
+            IWebElement settingsBtn = driver.FindElement(By.XPath("//div[@name='btnSettings']"));
+            settingsBtn.Click();
+
+            IWebElement locatinSecurityBtn = driver.FindElement(By.XPath("//div[contains(text(), 'Location Security')]"));
+            locatinSecurityBtn.Click();
+
+            IWebElement addCountryBtn = driver.FindElement(By.XPath("//div[@name='btnAddCountry']"));
+            addCountryBtn.Click();
+
+            //IWebElement cbCountries = driver.FindElement(By.XPath("//div[@name='cbCountries']"));
+            //cbCountries.Click();
+            //cbCountries.SendKeys("uk");
+            //cbCountries.SendKeys(Keys.Enter);
+
+            addCountryBtn.Click();
+
+            IWebElement saveBtn = driver.FindElement(By.XPath("//div[@name='atbbSave']"));
+            saveBtn.Click();
+
+            Assert.IsTrue(driver.FindElement(By.XPath("//div[contains(text(), 'You cannot block yourself')]")).Displayed, "Alert is not displayed");
         }
     }
 }
